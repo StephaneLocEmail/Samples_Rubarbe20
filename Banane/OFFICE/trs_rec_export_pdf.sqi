@@ -1,0 +1,38 @@
+/* FORCE UPDATE REC_TTL */
+@dbHot(REC_TTL);
+
+/* SET PRIMARY PARAMETERS */
+@wizSet(F1032=®dbHot(REC_HDR,F1032,#));
+@wizSet(F2603=@dbHot(VENDOR_TAB,F2603));
+@wizRpl(F2597=@dbHOT(VENDOR_TAB,F2597));
+
+/* VALIDATE IF THE VENDOR EMAIL EXIST */
+@fmt(CMP,@wizGet(F2597)=PDF,,'®exec(SQI=trs_rec_export_close)®fmt(CHR,27)');
+@fmt(CMP,@wizGet(F2603)=,'®exec(SQI=trs_rec_export_close)®fmt(CHR,27)');
+
+/* BACKUP OUTPUT */
+@dbHot(HOT_WIZ,ParamToLine,trs_buy_doc_pdf);
+
+/* CREATE PDF REPORT FROM PO */
+@wizClr(STYLE);
+@wizClr(TITLE);
+@WIZSET(DEVICE=PDF);
+@wizRpl(PDFFILE=@OFFICEDBT\TMP_@Store@Ter_@dbHot(CNCurrent).PDF);
+@wizRpl(OUTPUT=@wizGet(PDFFILE));
+@exec(SQR=TRS_REC_PO_ONE);
+@wizClr(STYLE);
+@wizClr(TITLE);
+
+/* SEND VIA EMAIL */
+@wizClr(OUTPUT);
+@wizRpl(TARGET=969);
+@wizRpl(SRC_PATH=@wizGet(PDFFILE));
+@wizRpl(TO=@wizGet(F2603));
+@fmt(CMP,@wizGet(TEMPLATE)=ERROR_REPORT,,'®exec(SQT=@OfficeCgi\®tools(FIND_LANG,cgi\trs_rec_export_pdf*.htm))');
+
+/* RESTORE OUTPUT */
+@dbHot(HOT_WIZ,LineToParam,trs_buy_doc_pdf);
+@dbHot(HOT_WIZ,CLR,trs_buy_doc_pdf);
+
+/* CLOSE DOCUMENT */
+@EXEC(FCT=3180);
